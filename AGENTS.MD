@@ -47,11 +47,20 @@ Las reglas de este documento deben ser respetadas por **todos los modelos de IA*
       public interface XxxMapper {
       }
 
-7. **No agregar complejidad no solicitada.**
+7. **Reglas de Tests.**
    ### Prohibido
    - JUnit 4
    - Tests de integración pesados salvo que se pidan explícitamente
 
+8. **Reglas de Java Doc**
+    - Agregar JavaDoc en clases y métodos públicos cuando aporte claridad.
+    - Priorizar JavaDoc en:
+      - services
+      - métodos de negocio
+      - controllers
+      - componentes con lógica no trivial
+    - No escribir comentarios obvios o redundantes.
+    - El JavaDoc debe explicar intención, no repetir el nombre del método.
 ---
 
 ## Estructura estándar del proyecto
@@ -89,3 +98,4 @@ src/main/java/com/company/project/
 │   │   └── impl/
 │   │       └── AuthServiceImpl.java
 │   └── security/           (si corresponde al módulo)
+```
