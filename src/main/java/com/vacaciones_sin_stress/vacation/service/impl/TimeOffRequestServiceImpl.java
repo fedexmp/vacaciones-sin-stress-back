@@ -79,6 +79,7 @@ public class TimeOffRequestServiceImpl implements TimeOffRequestService {
                 .warningExceededTenDays(businessDays > 10)
                 .warningRetroactive(startDate.isBefore(LocalDate.now()))
                 .validatedWithClient(false)
+                .notified(false)
                 .build();
 
         TimeOffRequest savedRequest = timeOffRequestRepository.save(timeOffRequest);

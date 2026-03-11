@@ -102,6 +102,9 @@ public class TimeOffRequest {
     @Column(name = "validated_at")
     private LocalDateTime validatedAt;
 
+    @Column(name = "notified", nullable = false)
+    private boolean notified;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

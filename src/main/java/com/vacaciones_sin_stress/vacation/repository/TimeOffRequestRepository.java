@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,9 @@ public interface TimeOffRequestRepository extends JpaRepository<TimeOffRequest, 
     List<TimeOffRequest> findByStatus(TimeOffRequestStatus status);
 
     List<TimeOffRequest> findByStatusOrderByRequestedAtAsc(TimeOffRequestStatus status);
+
+    List<TimeOffRequest> findByUserIdAndStatusInAndNotifiedFalseOrderByUpdatedAtDesc(Long userId,
+                                                                                       Collection<TimeOffRequestStatus> statuses);
 
     @Query("""
             select vr
