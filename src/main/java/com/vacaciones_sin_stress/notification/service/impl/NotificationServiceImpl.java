@@ -54,12 +54,12 @@ public class NotificationServiceImpl implements NotificationService {
                 .map(this::toRequestResultNotification)
                 .forEach(notifications::add);
 
-        if (currentUser.getRole() == Role.LEADER) {
-            timeOffRequestRepository.findByStatusAndLeaderId(TimeOffRequestStatus.PENDING_LEADER, currentUser.getId())
-                    .stream()
-                    .map(this::toPendingActionNotification)
-                    .forEach(notifications::add);
-        } else if (currentUser.getRole() == Role.HR) {
+        timeOffRequestRepository.findByStatusAndLeaderId(TimeOffRequestStatus.PENDING_LEADER, currentUser.getId())
+                .stream()
+                .map(this::toPendingActionNotification)
+                .forEach(notifications::add);
+
+        if (currentUser.getRole() == Role.HR) {
             timeOffRequestRepository.findByStatusOrderByRequestedAtAsc(TimeOffRequestStatus.PENDING_HR)
                     .stream()
                     .map(this::toPendingActionNotification)

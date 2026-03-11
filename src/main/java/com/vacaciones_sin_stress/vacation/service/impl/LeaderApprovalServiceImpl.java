@@ -1,7 +1,6 @@
 package com.vacaciones_sin_stress.vacation.service.impl;
 
 import com.vacaciones_sin_stress.auth.service.CurrentUserService;
-import com.vacaciones_sin_stress.common.enums.Role;
 import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.common.exception.ApiValidationException;
 import com.vacaciones_sin_stress.common.exception.ConflictException;
@@ -46,7 +45,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
     @Override
     @Transactional(readOnly = true)
     public List<ApprovalResponse> getPendingLeaderApprovals() {
-        User leader = requireLeader();
+        User leader = getCurrentUser();
         return timeOffRequestRepository
                 .findByStatusAndLeaderId(TimeOffRequestStatus.PENDING_LEADER, leader.getId())
                 .stream()
@@ -65,7 +64,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
                                                    LocalDate fromDate,
                                                    LocalDate toDate,
                                                    Pageable pageable) {
-        User leader = requireLeader();
+        User leader = getCurrentUser();
         validatePeriod(fromDate, toDate);
 
         Specification<TimeOffRequest> specification = Specification
@@ -86,7 +85,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
     @Override
     @Transactional
     public ApprovalResponse approve(Long requestId) {
-        User leader = requireLeader();
+        User leader = getCurrentUser();
         TimeOffRequest timeOffRequest = findAndValidatePendingRequest(requestId, leader);
 
         timeOffRequest.setStatus(TimeOffRequestStatus.PENDING_HR);
@@ -104,7 +103,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
     @Override
     @Transactional
     public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
-        User leader = requireLeader();
+        User leader = getCurrentUser();
         TimeOffRequest timeOffRequest = findAndValidatePendingRequest(requestId, leader);
 
         String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
@@ -121,12 +120,8 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         return leaderApprovalMapper.toApprovalResponse(updated);
     }
 
-    private User requireLeader() {
-        User currentUser = currentUserService.getCurrentUser();
-        if (currentUser.getRole() != Role.LEADER) {
-            throw new ForbiddenOperationException("Only LEADER users can access leader approvals");
-        }
-        return currentUser;
+    private User getCurrentUser() {
+        return currentUserService.getCurrentUser();
     }
 
     private TimeOffRequest findAndValidatePendingRequest(Long requestId, User leader) {
