@@ -8,9 +8,9 @@ import com.vacaciones_sin_stress.calendar.service.TeamCalendarService;
 import com.vacaciones_sin_stress.dashboard.dto.response.DashboardResponse;
 import com.vacaciones_sin_stress.dashboard.service.DashboardService;
 import com.vacaciones_sin_stress.user.entity.User;
-import com.vacaciones_sin_stress.vacation.dto.response.VacationRequestResponse;
-import com.vacaciones_sin_stress.vacation.mapper.VacationRequestMapper;
-import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
+import com.vacaciones_sin_stress.vacation.dto.response.TimeOffRequestResponse;
+import com.vacaciones_sin_stress.vacation.mapper.TimeOffRequestMapper;
+import com.vacaciones_sin_stress.vacation.repository.TimeOffRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +31,8 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final CurrentUserService currentUserService;
     private final VacationBalanceRepository vacationBalanceRepository;
-    private final VacationRequestRepository vacationRequestRepository;
-    private final VacationRequestMapper vacationRequestMapper;
+    private final TimeOffRequestRepository timeOffRequestRepository;
+    private final TimeOffRequestMapper timeOffRequestMapper;
     private final TeamCalendarService teamCalendarService;
 
     /**
@@ -49,11 +49,11 @@ public class DashboardServiceImpl implements DashboardService {
         Integer availableDays = optionalBalance.map(VacationBalance::getAvailableDays).orElse(null);
         Integer usedDays = optionalBalance.map(VacationBalance::getUsedDays).orElse(null);
 
-        List<VacationRequestResponse> recentRequests = vacationRequestRepository
+        List<TimeOffRequestResponse> recentRequests = timeOffRequestRepository
                 .findTop5ByUserIdOrderByCreatedAtDesc(currentUser.getId())
                 .stream()
                 .limit(RECENT_REQUESTS_LIMIT)
-                .map(vacationRequestMapper::toResponse)
+                .map(timeOffRequestMapper::toResponse)
                 .toList();
 
         List<CalendarEventResponse> upcomingTeamAbsences = teamCalendarService
@@ -68,3 +68,4 @@ public class DashboardServiceImpl implements DashboardService {
         );
     }
 }
+

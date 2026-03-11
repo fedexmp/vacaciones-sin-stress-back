@@ -7,7 +7,7 @@ import com.vacaciones_sin_stress.calendar.entity.CalendarEvent;
 import com.vacaciones_sin_stress.calendar.repository.CalendarEventRepository;
 import com.vacaciones_sin_stress.common.enums.EventType;
 import com.vacaciones_sin_stress.common.enums.Role;
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.common.exception.ApiValidationException;
 import com.vacaciones_sin_stress.common.exception.ConflictException;
 import com.vacaciones_sin_stress.common.exception.ForbiddenOperationException;
@@ -18,9 +18,9 @@ import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
-import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
+import com.vacaciones_sin_stress.vacation.repository.TimeOffRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.HrApprovalService;
-import com.vacaciones_sin_stress.vacation.specification.VacationRequestSpecifications;
+import com.vacaciones_sin_stress.vacation.specification.TimeOffRequestSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +40,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class HrApprovalServiceImpl implements HrApprovalService {
 
-    private final VacationRequestRepository vacationRequestRepository;
+    private final TimeOffRequestRepository timeOffRequestRepository;
     private final VacationBalanceRepository vacationBalanceRepository;
     private final CalendarEventRepository calendarEventRepository;
     private final CurrentUserService currentUserService;
@@ -53,7 +53,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     @Transactional(readOnly = true)
     public List<ApprovalResponse> getPendingHrApprovals() {
         requireHrUser();
-        return vacationRequestRepository.findByStatusOrderByRequestedAtAsc(VacationRequestStatus.PENDING_HR)
+        return timeOffRequestRepository.findByStatusOrderByRequestedAtAsc(TimeOffRequestStatus.PENDING_HR)
                 .stream()
                 .map(approvalMapper::toApprovalResponse)
                 .toList();
@@ -64,7 +64,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ApprovalResponse> getHrHistory(VacationRequestStatus status,
+    public Page<ApprovalResponse> getHrHistory(TimeOffRequestStatus status,
                                                Long userId,
                                                Integer requestYear,
                                                LocalDate fromDate,
@@ -74,13 +74,13 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         validatePeriod(fromDate, toDate);
 
         Specification<TimeOffRequest> specification = Specification
-                .where(VacationRequestSpecifications.withStatus(status))
-                .and(VacationRequestSpecifications.withUserId(userId))
-                .and(VacationRequestSpecifications.withRequestYear(requestYear))
-                .and(VacationRequestSpecifications.withFromDate(fromDate))
-                .and(VacationRequestSpecifications.withToDate(toDate));
+                .where(TimeOffRequestSpecifications.withStatus(status))
+                .and(TimeOffRequestSpecifications.withUserId(userId))
+                .and(TimeOffRequestSpecifications.withRequestYear(requestYear))
+                .and(TimeOffRequestSpecifications.withFromDate(fromDate))
+                .and(TimeOffRequestSpecifications.withToDate(toDate));
 
-        return vacationRequestRepository.findAll(specification, pageable)
+        return timeOffRequestRepository.findAll(specification, pageable)
                 .map(approvalMapper::toApprovalResponse);
     }
 
@@ -91,19 +91,19 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     @Transactional
     public ApprovalResponse approve(Long requestId, HrApprovalRequest actionRequest) {
         User hrUser = requireHrUser();
-        TimeOffRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
-        if (vacationRequest.getEventType() == EventType.VACATION) {
-            discountVacationBalance(vacationRequest, hrUser);
+        TimeOffRequest timeOffRequest = findPendingHrRequestForUpdate(requestId);
+        if (timeOffRequest.getEventType() == EventType.VACATION) {
+            discountVacationBalance(timeOffRequest, hrUser);
         }
 
         LocalDateTime now = LocalDateTime.now();
-        vacationRequest.setStatus(VacationRequestStatus.APPROVED);
-        vacationRequest.setApprovedByHrId(hrUser.getId());
-        vacationRequest.setReviewedByHrAt(now);
-        vacationRequest.setRejectionReason(null);
-        applyClientValidation(vacationRequest, actionRequest, hrUser, now);
+        timeOffRequest.setStatus(TimeOffRequestStatus.APPROVED);
+        timeOffRequest.setApprovedByHrId(hrUser.getId());
+        timeOffRequest.setReviewedByHrAt(now);
+        timeOffRequest.setRejectionReason(null);
+        applyClientValidation(timeOffRequest, actionRequest, hrUser, now);
 
-        TimeOffRequest updatedRequest = vacationRequestRepository.save(vacationRequest);
+        TimeOffRequest updatedRequest = timeOffRequestRepository.save(timeOffRequest);
         createCalendarEventIfNeeded(updatedRequest);
         return approvalMapper.toApprovalResponse(updatedRequest);
     }
@@ -115,19 +115,19 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     @Transactional
     public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
         User hrUser = requireHrUser();
-        TimeOffRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
+        TimeOffRequest timeOffRequest = findPendingHrRequestForUpdate(requestId);
 
         String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
         if (!StringUtils.hasText(rejectionReason)) {
             throw new ApiValidationException("rejectionReason is required for rejection");
         }
 
-        vacationRequest.setStatus(VacationRequestStatus.REJECTED_HR);
-        vacationRequest.setReviewedByHrAt(LocalDateTime.now());
-        vacationRequest.setApprovedByHrId(hrUser.getId());
-        vacationRequest.setRejectionReason(rejectionReason.trim());
+        timeOffRequest.setStatus(TimeOffRequestStatus.REJECTED_HR);
+        timeOffRequest.setReviewedByHrAt(LocalDateTime.now());
+        timeOffRequest.setApprovedByHrId(hrUser.getId());
+        timeOffRequest.setRejectionReason(rejectionReason.trim());
 
-        TimeOffRequest updated = vacationRequestRepository.save(vacationRequest);
+        TimeOffRequest updated = timeOffRequestRepository.save(timeOffRequest);
         return approvalMapper.toApprovalResponse(updated);
     }
 
@@ -140,45 +140,45 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     }
 
     private TimeOffRequest findPendingHrRequestForUpdate(Long requestId) {
-        TimeOffRequest vacationRequest = vacationRequestRepository.findByIdForUpdate(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vacation request not found: " + requestId));
-        if (vacationRequest.getStatus() != VacationRequestStatus.PENDING_HR) {
-            throw new ConflictException("Vacation request is not in PENDING_HR status");
+        TimeOffRequest timeOffRequest = timeOffRequestRepository.findByIdForUpdate(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Time-off request not found: " + requestId));
+        if (timeOffRequest.getStatus() != TimeOffRequestStatus.PENDING_HR) {
+            throw new ConflictException("Time-off request is not in PENDING_HR status");
         }
-        return vacationRequest;
+        return timeOffRequest;
     }
 
-    private void createCalendarEventIfNeeded(TimeOffRequest vacationRequest) {
-        if (calendarEventRepository.existsByVacationRequestId(vacationRequest.getId())) {
+    private void createCalendarEventIfNeeded(TimeOffRequest timeOffRequest) {
+        if (calendarEventRepository.existsByTimeOffRequestId(timeOffRequest.getId())) {
             return;
         }
 
         CalendarEvent event = CalendarEvent.builder()
-                .userId(vacationRequest.getUserId())
-                .vacationRequestId(vacationRequest.getId())
-                .title(resolveEventTitle(vacationRequest.getEventType()))
-                .startDate(vacationRequest.getStartDate())
-                .endDate(vacationRequest.getEndDate())
-                .eventType(vacationRequest.getEventType())
+                .userId(timeOffRequest.getUserId())
+                .timeOffRequestId(timeOffRequest.getId())
+                .title(resolveEventTitle(timeOffRequest.getEventType()))
+                .startDate(timeOffRequest.getStartDate())
+                .endDate(timeOffRequest.getEndDate())
+                .eventType(timeOffRequest.getEventType())
                 .build();
         calendarEventRepository.save(event);
     }
 
-    private void discountVacationBalance(TimeOffRequest vacationRequest, User hrUser) {
+    private void discountVacationBalance(TimeOffRequest timeOffRequest, User hrUser) {
         VacationBalance vacationBalance = vacationBalanceRepository
-                .findByUserIdAndYearForUpdate(vacationRequest.getUserId(), vacationRequest.getRequestYear())
+                .findByUserIdAndYearForUpdate(timeOffRequest.getUserId(), timeOffRequest.getRequestYear())
                 .orElseThrow(() -> new ConflictException(
-                        "Vacation balance not found for user " + vacationRequest.getUserId()
-                                + " and year " + vacationRequest.getRequestYear()));
+                        "Vacation balance not found for user " + timeOffRequest.getUserId()
+                                + " and year " + timeOffRequest.getRequestYear()));
 
         int currentUsedDays = vacationBalance.getUsedDays();
         int currentTotalDays = vacationBalance.getTotalDays();
         int currentAvailableDays = currentTotalDays - currentUsedDays;
-        if (currentAvailableDays < vacationRequest.getBusinessDays()) {
+        if (currentAvailableDays < timeOffRequest.getBusinessDays()) {
             throw new ConflictException("Insufficient available vacation days for final approval");
         }
 
-        int updatedUsedDays = currentUsedDays + vacationRequest.getBusinessDays();
+        int updatedUsedDays = currentUsedDays + timeOffRequest.getBusinessDays();
         vacationBalance.setUsedDays(updatedUsedDays);
         vacationBalance.setAvailableDays(currentTotalDays - updatedUsedDays);
         vacationBalance.setUpdatedBy(hrUser.getId());
@@ -192,7 +192,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         return "Vacation approved";
     }
 
-    private void applyClientValidation(TimeOffRequest vacationRequest,
+    private void applyClientValidation(TimeOffRequest timeOffRequest,
                                        HrApprovalRequest actionRequest,
                                        User hrUser,
                                        LocalDateTime now) {
@@ -201,15 +201,15 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         }
 
         boolean validatedWithClient = actionRequest.getValidatedWithClient();
-        vacationRequest.setValidatedWithClient(validatedWithClient);
+        timeOffRequest.setValidatedWithClient(validatedWithClient);
         if (validatedWithClient) {
-            vacationRequest.setValidatedBy(hrUser.getId());
-            vacationRequest.setValidatedAt(now);
+            timeOffRequest.setValidatedBy(hrUser.getId());
+            timeOffRequest.setValidatedAt(now);
             return;
         }
 
-        vacationRequest.setValidatedBy(null);
-        vacationRequest.setValidatedAt(null);
+        timeOffRequest.setValidatedBy(null);
+        timeOffRequest.setValidatedAt(null);
     }
 
     private void validatePeriod(LocalDate fromDate, LocalDate toDate) {
@@ -218,3 +218,4 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         }
     }
 }
+

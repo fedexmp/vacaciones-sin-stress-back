@@ -1,6 +1,6 @@
 package com.vacaciones_sin_stress.vacation.specification;
 
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.user.entity.User;
 import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -10,16 +10,16 @@ import java.time.LocalDate;
 /**
  * Reusable specifications for filtering vacation-request history views.
  */
-public final class VacationRequestSpecifications {
+public final class TimeOffRequestSpecifications {
 
-    private VacationRequestSpecifications() {
+    private TimeOffRequestSpecifications() {
     }
 
     public static Specification<TimeOffRequest> withUserId(Long userId) {
         return (root, query, cb) -> userId == null ? cb.conjunction() : cb.equal(root.get("userId"), userId);
     }
 
-    public static Specification<TimeOffRequest> withStatus(VacationRequestStatus status) {
+    public static Specification<TimeOffRequest> withStatus(TimeOffRequestStatus status) {
         return (root, query, cb) -> status == null ? cb.conjunction() : cb.equal(root.get("status"), status);
     }
 
@@ -49,10 +49,11 @@ public final class VacationRequestSpecifications {
             directReportSubquery.select(userRoot.get("id"))
                     .where(cb.equal(userRoot.get("leaderId"), leaderId));
             var pendingForDirectReports = cb.and(
-                    cb.equal(root.get("status"), VacationRequestStatus.PENDING_LEADER),
+                    cb.equal(root.get("status"), TimeOffRequestStatus.PENDING_LEADER),
                     root.get("userId").in(directReportSubquery)
             );
             return cb.or(reviewedByLeader, pendingForDirectReports);
         };
     }
 }
+

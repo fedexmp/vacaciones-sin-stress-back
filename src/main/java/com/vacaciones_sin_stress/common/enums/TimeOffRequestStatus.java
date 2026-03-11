@@ -1,6 +1,6 @@
 package com.vacaciones_sin_stress.common.enums;
 
-public enum VacationRequestStatus {
+public enum TimeOffRequestStatus {
     DRAFT,
     PENDING_LEADER,
     PENDING_HR,
@@ -8,3 +8,4 @@ public enum VacationRequestStatus {
     REJECTED_LEADER,
     REJECTED_HR
 }
+

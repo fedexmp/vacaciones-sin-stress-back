@@ -11,10 +11,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateVacationRequestRequest {
+public class CreateTimeOffRequestRequest {
 
     private LocalDate startDate;
     private LocalDate endDate;
     private EventType eventType;
     private String comment;
 }
+

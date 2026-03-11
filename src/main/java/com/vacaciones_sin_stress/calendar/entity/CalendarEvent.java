@@ -43,7 +43,7 @@ public class CalendarEvent {
     private Long userId;
 
     @Column(name = "vacation_request_id")
-    private Long vacationRequestId;
+    private Long timeOffRequestId;
 
     @Column(nullable = false, length = 200)
     private String title;

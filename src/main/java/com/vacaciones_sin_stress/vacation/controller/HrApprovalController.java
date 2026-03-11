@@ -1,6 +1,6 @@
 package com.vacaciones_sin_stress.vacation.controller;
 
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
@@ -45,7 +45,7 @@ public class HrApprovalController {
      */
     @GetMapping("/history")
     public ResponseEntity<Page<ApprovalResponse>> getHrHistory(
-            @RequestParam(value = "status", required = false) VacationRequestStatus status,
+            @RequestParam(value = "status", required = false) TimeOffRequestStatus status,
             @RequestParam(value = "userId", required = false) Long userId,
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -83,3 +83,4 @@ public class HrApprovalController {
         return ResponseEntity.ok(hrApprovalService.reject(id, request));
     }
 }
+

@@ -15,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RejectApprovalRequest {
 
-    @Schema(description = "Reason for rejecting the vacation request",
+    @Schema(description = "Reason for rejecting the time-off request",
             requiredMode = Schema.RequiredMode.REQUIRED,
             example = "Se superpone con un cierre crítico del equipo")
     private String rejectionReason;

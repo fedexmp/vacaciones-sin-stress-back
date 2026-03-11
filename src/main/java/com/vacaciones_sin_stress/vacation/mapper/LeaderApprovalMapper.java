@@ -7,5 +7,5 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface LeaderApprovalMapper {
 
-    ApprovalResponse toApprovalResponse(TimeOffRequest vacationRequest);
+    ApprovalResponse toApprovalResponse(TimeOffRequest timeOffRequest);
 }

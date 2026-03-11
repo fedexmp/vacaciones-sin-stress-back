@@ -1,6 +1,6 @@
 package com.vacaciones_sin_stress.vacation.repository;
 
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface VacationRequestRepository extends JpaRepository<TimeOffRequest, Long>, JpaSpecificationExecutor<TimeOffRequest> {
+public interface TimeOffRequestRepository extends JpaRepository<TimeOffRequest, Long>, JpaSpecificationExecutor<TimeOffRequest> {
 
     List<TimeOffRequest> findByUserId(Long userId);
 
@@ -21,9 +21,9 @@ public interface VacationRequestRepository extends JpaRepository<TimeOffRequest,
 
     List<TimeOffRequest> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
 
-    List<TimeOffRequest> findByStatus(VacationRequestStatus status);
+    List<TimeOffRequest> findByStatus(TimeOffRequestStatus status);
 
-    List<TimeOffRequest> findByStatusOrderByRequestedAtAsc(VacationRequestStatus status);
+    List<TimeOffRequest> findByStatusOrderByRequestedAtAsc(TimeOffRequestStatus status);
 
     @Query("""
             select vr
@@ -35,14 +35,14 @@ public interface VacationRequestRepository extends JpaRepository<TimeOffRequest,
                 where u.leaderId = :leaderId
               )
             """)
-    List<TimeOffRequest> findByStatusAndLeaderId(@Param("status") VacationRequestStatus status,
+    List<TimeOffRequest> findByStatusAndLeaderId(@Param("status") TimeOffRequestStatus status,
                                                  @Param("leaderId") Long leaderId);
 
     @Query("""
             select vr
             from TimeOffRequest vr
             where vr.userId = :userId
-              and vr.status = com.vacaciones_sin_stress.common.enums.VacationRequestStatus.APPROVED
+              and vr.status = com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.APPROVED
               and vr.startDate <= :endDate
               and vr.endDate >= :startDate
             """)
@@ -53,7 +53,7 @@ public interface VacationRequestRepository extends JpaRepository<TimeOffRequest,
     @Query("""
             select vr
             from TimeOffRequest vr
-            where vr.status = com.vacaciones_sin_stress.common.enums.VacationRequestStatus.APPROVED
+            where vr.status = com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.APPROVED
               and vr.startDate <= :toDate
               and vr.endDate >= :fromDate
             order by vr.startDate asc, vr.id asc
@@ -64,7 +64,7 @@ public interface VacationRequestRepository extends JpaRepository<TimeOffRequest,
     @Query("""
             select vr
             from TimeOffRequest vr
-            where vr.status = com.vacaciones_sin_stress.common.enums.VacationRequestStatus.APPROVED
+            where vr.status = com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.APPROVED
               and vr.userId in :userIds
               and vr.startDate <= :toDate
               and vr.endDate >= :fromDate
@@ -78,3 +78,4 @@ public interface VacationRequestRepository extends JpaRepository<TimeOffRequest,
     @Query("select vr from TimeOffRequest vr where vr.id = :id")
     Optional<TimeOffRequest> findByIdForUpdate(@Param("id") Long id);
 }
+

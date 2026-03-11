@@ -9,8 +9,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VacationRequestValidationResponse {
+public class TimeOffRequestValidationResponse {
 
     private boolean warningExceededTenDays;
     private boolean warningRetroactive;
 }
+

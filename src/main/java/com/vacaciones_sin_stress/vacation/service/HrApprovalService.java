@@ -3,7 +3,7 @@ package com.vacaciones_sin_stress.vacation.service;
 import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -33,7 +33,7 @@ public interface HrApprovalService {
      * @param pageable pagination data
      * @return paged filtered history
      */
-    Page<ApprovalResponse> getHrHistory(VacationRequestStatus status,
+    Page<ApprovalResponse> getHrHistory(TimeOffRequestStatus status,
                                         Long userId,
                                         Integer requestYear,
                                         LocalDate fromDate,
@@ -58,3 +58,4 @@ public interface HrApprovalService {
      */
     ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest);
 }
+

@@ -1,6 +1,6 @@
 package com.vacaciones_sin_stress.vacation.controller;
 
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.vacation.service.LeaderApprovalService;
@@ -44,7 +44,7 @@ public class LeaderApprovalController {
      */
     @GetMapping("/history")
     public ResponseEntity<Page<ApprovalResponse>> getLeaderHistory(
-            @RequestParam(value = "status", required = false) VacationRequestStatus status,
+            @RequestParam(value = "status", required = false) TimeOffRequestStatus status,
             @RequestParam(value = "userId", required = false) Long userId,
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -81,3 +81,4 @@ public class LeaderApprovalController {
         return ResponseEntity.ok(leaderApprovalService.reject(id, request));
     }
 }
+

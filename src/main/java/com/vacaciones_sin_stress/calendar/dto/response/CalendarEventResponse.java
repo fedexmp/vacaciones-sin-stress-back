@@ -17,7 +17,7 @@ public class CalendarEventResponse {
     private Long id;
     private Long userId;
     private String userFullName;
-    private Long vacationRequestId;
+    private Long timeOffRequestId;
     private String title;
     private LocalDate startDate;
     private LocalDate endDate;

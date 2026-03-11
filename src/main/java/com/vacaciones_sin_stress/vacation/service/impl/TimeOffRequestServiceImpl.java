@@ -2,20 +2,20 @@ package com.vacaciones_sin_stress.vacation.service.impl;
 
 import com.vacaciones_sin_stress.auth.service.CurrentUserService;
 import com.vacaciones_sin_stress.common.enums.EventType;
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.common.exception.ApiValidationException;
 import com.vacaciones_sin_stress.common.exception.ConflictException;
 import com.vacaciones_sin_stress.common.exception.ForbiddenOperationException;
 import com.vacaciones_sin_stress.common.exception.ResourceNotFoundException;
 import com.vacaciones_sin_stress.user.entity.User;
-import com.vacaciones_sin_stress.vacation.dto.request.CreateVacationRequestRequest;
-import com.vacaciones_sin_stress.vacation.dto.response.VacationRequestResponse;
+import com.vacaciones_sin_stress.vacation.dto.request.CreateTimeOffRequestRequest;
+import com.vacaciones_sin_stress.vacation.dto.response.TimeOffRequestResponse;
 import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
-import com.vacaciones_sin_stress.vacation.mapper.VacationRequestMapper;
-import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
+import com.vacaciones_sin_stress.vacation.mapper.TimeOffRequestMapper;
+import com.vacaciones_sin_stress.vacation.repository.TimeOffRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.BusinessDayCalculatorService;
-import com.vacaciones_sin_stress.vacation.service.VacationRequestService;
-import com.vacaciones_sin_stress.vacation.specification.VacationRequestSpecifications;
+import com.vacaciones_sin_stress.vacation.service.TimeOffRequestService;
+import com.vacaciones_sin_stress.vacation.specification.TimeOffRequestSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,23 +29,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Implements MVP vacation-request use cases with basic validations.
+ * Implements MVP time-off request use cases with basic validations.
  */
 @Service
 @RequiredArgsConstructor
-public class VacationRequestServiceImpl implements VacationRequestService {
+public class TimeOffRequestServiceImpl implements TimeOffRequestService {
 
-    private final VacationRequestRepository vacationRequestRepository;
+    private final TimeOffRequestRepository timeOffRequestRepository;
     private final BusinessDayCalculatorService businessDayCalculatorService;
     private final CurrentUserService currentUserService;
-    private final VacationRequestMapper vacationRequestMapper;
+    private final TimeOffRequestMapper timeOffRequestMapper;
 
     /**
-     * Validates and creates a vacation request in PENDING_LEADER status.
+     * Validates and creates a time-off request in PENDING_LEADER status.
      */
     @Override
     @Transactional
-    public VacationRequestResponse createVacationRequest(CreateVacationRequestRequest request) {
+    public TimeOffRequestResponse createTimeOffRequest(CreateTimeOffRequestRequest request) {
         validateRequestPayload(request);
 
         User currentUser = currentUserService.getCurrentUser();
@@ -60,13 +60,13 @@ public class VacationRequestServiceImpl implements VacationRequestService {
             throw new ApiValidationException("Request must include at least one business day");
         }
 
-        if (!vacationRequestRepository
+        if (!timeOffRequestRepository
                 .findApprovedOverlappingRequests(currentUser.getId(), startDate, endDate)
                 .isEmpty()) {
             throw new ConflictException("Request overlaps with an approved request");
         }
 
-        TimeOffRequest vacationRequest = TimeOffRequest.builder()
+        TimeOffRequest timeOffRequest = TimeOffRequest.builder()
                 .userId(currentUser.getId())
                 .startDate(startDate)
                 .endDate(endDate)
@@ -74,27 +74,27 @@ public class VacationRequestServiceImpl implements VacationRequestService {
                 .businessDays(businessDays)
                 .eventType(request.getEventType())
                 .comment(trimToNull(request.getComment()))
-                .status(VacationRequestStatus.PENDING_LEADER)
+                .status(TimeOffRequestStatus.PENDING_LEADER)
                 .requestedAt(LocalDateTime.now())
                 .warningExceededTenDays(businessDays > 10)
                 .warningRetroactive(startDate.isBefore(LocalDate.now()))
                 .validatedWithClient(false)
                 .build();
 
-        TimeOffRequest savedRequest = vacationRequestRepository.save(vacationRequest);
-        return vacationRequestMapper.toResponse(savedRequest);
+        TimeOffRequest savedRequest = timeOffRequestRepository.save(timeOffRequest);
+        return timeOffRequestMapper.toResponse(savedRequest);
     }
 
     /**
-     * Returns the current user's vacation requests sorted by newest first.
+     * Returns the current user's time-off requests sorted by newest first.
      */
     @Override
     @Transactional(readOnly = true)
-    public List<VacationRequestResponse> getMyVacationRequests() {
+    public List<TimeOffRequestResponse> getMyTimeOffRequests() {
         Long userId = currentUserService.getCurrentUser().getId();
-        return vacationRequestRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return timeOffRequestRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
-                .map(vacationRequestMapper::toResponse)
+                .map(timeOffRequestMapper::toResponse)
                 .toList();
     }
 
@@ -103,23 +103,23 @@ public class VacationRequestServiceImpl implements VacationRequestService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<VacationRequestResponse> getMyVacationRequestsHistory(VacationRequestStatus status,
-                                                                      Integer requestYear,
-                                                                      LocalDate fromDate,
-                                                                      LocalDate toDate,
-                                                                      Pageable pageable) {
+    public Page<TimeOffRequestResponse> getMyTimeOffRequestsHistory(TimeOffRequestStatus status,
+                                                                    Integer requestYear,
+                                                                    LocalDate fromDate,
+                                                                    LocalDate toDate,
+                                                                    Pageable pageable) {
         validatePeriod(fromDate, toDate);
 
         Long userId = currentUserService.getCurrentUser().getId();
         Specification<TimeOffRequest> specification = Specification
-                .where(VacationRequestSpecifications.forUser(userId))
-                .and(VacationRequestSpecifications.withStatus(status))
-                .and(VacationRequestSpecifications.withRequestYear(requestYear))
-                .and(VacationRequestSpecifications.withFromDate(fromDate))
-                .and(VacationRequestSpecifications.withToDate(toDate));
+                .where(TimeOffRequestSpecifications.forUser(userId))
+                .and(TimeOffRequestSpecifications.withStatus(status))
+                .and(TimeOffRequestSpecifications.withRequestYear(requestYear))
+                .and(TimeOffRequestSpecifications.withFromDate(fromDate))
+                .and(TimeOffRequestSpecifications.withToDate(toDate));
 
-        return vacationRequestRepository.findAll(specification, pageable)
-                .map(vacationRequestMapper::toResponse);
+        return timeOffRequestRepository.findAll(specification, pageable)
+                .map(timeOffRequestMapper::toResponse);
     }
 
     /**
@@ -127,19 +127,19 @@ public class VacationRequestServiceImpl implements VacationRequestService {
      */
     @Override
     @Transactional(readOnly = true)
-    public VacationRequestResponse getVacationRequestById(Long requestId) {
+    public TimeOffRequestResponse getTimeOffRequestById(Long requestId) {
         User currentUser = currentUserService.getCurrentUser();
-        TimeOffRequest vacationRequest = vacationRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vacation request not found: " + requestId));
+        TimeOffRequest timeOffRequest = timeOffRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Time-off request not found: " + requestId));
 
-        if (!vacationRequest.getUserId().equals(currentUser.getId())) {
-            throw new ForbiddenOperationException("You cannot access another user's vacation request");
+        if (!timeOffRequest.getUserId().equals(currentUser.getId())) {
+            throw new ForbiddenOperationException("You cannot access another user's time-off request");
         }
 
-        return vacationRequestMapper.toResponse(vacationRequest);
+        return timeOffRequestMapper.toResponse(timeOffRequest);
     }
 
-    private void validateRequestPayload(CreateVacationRequestRequest request) {
+    private void validateRequestPayload(CreateTimeOffRequestRequest request) {
         if (request == null) {
             throw new ApiValidationException("Request body is required");
         }
@@ -176,3 +176,4 @@ public class VacationRequestServiceImpl implements VacationRequestService {
         return value.trim();
     }
 }
+

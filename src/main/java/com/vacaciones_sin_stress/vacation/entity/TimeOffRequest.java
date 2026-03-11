@@ -1,7 +1,7 @@
 package com.vacaciones_sin_stress.vacation.entity;
 
 import com.vacaciones_sin_stress.common.enums.EventType;
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -67,7 +67,7 @@ public class TimeOffRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private VacationRequestStatus status;
+    private TimeOffRequestStatus status;
 
     @Column(name = "requested_at")
     private LocalDateTime requestedAt;
@@ -110,3 +110,4 @@ public class TimeOffRequest {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
+

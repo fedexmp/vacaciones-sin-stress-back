@@ -10,7 +10,7 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
 
     List<CalendarEvent> findByUserId(Long userId);
 
-    boolean existsByVacationRequestId(Long vacationRequestId);
+    boolean existsByTimeOffRequestId(Long timeOffRequestId);
 
     List<CalendarEvent> findByStartDateGreaterThanEqualOrderByStartDateAsc(LocalDate startDate);
 

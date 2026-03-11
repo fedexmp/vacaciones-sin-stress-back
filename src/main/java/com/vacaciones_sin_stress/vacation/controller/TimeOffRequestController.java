@@ -1,9 +1,9 @@
 package com.vacaciones_sin_stress.vacation.controller;
 
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
-import com.vacaciones_sin_stress.vacation.dto.request.CreateVacationRequestRequest;
-import com.vacaciones_sin_stress.vacation.dto.response.VacationRequestResponse;
-import com.vacaciones_sin_stress.vacation.service.VacationRequestService;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
+import com.vacaciones_sin_stress.vacation.dto.request.CreateTimeOffRequestRequest;
+import com.vacaciones_sin_stress.vacation.dto.response.TimeOffRequestResponse;
+import com.vacaciones_sin_stress.vacation.service.TimeOffRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,39 +23,39 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Exposes MVP vacation-request endpoints.
+ * Exposes MVP time-off request endpoints.
  */
 @RestController
-@RequestMapping("/vacation-requests")
+@RequestMapping({"/time-off-requests", "/vacation-requests"})
 @RequiredArgsConstructor
-public class VacationRequestController {
+public class TimeOffRequestController {
 
-    private final VacationRequestService vacationRequestService;
+    private final TimeOffRequestService timeOffRequestService;
 
     /**
-     * Creates a vacation request for the current user.
+     * Creates a time-off request for the current user.
      */
     @PostMapping
-    public ResponseEntity<VacationRequestResponse> createVacationRequest(
-            @RequestBody CreateVacationRequestRequest request) {
-        VacationRequestResponse response = vacationRequestService.createVacationRequest(request);
+    public ResponseEntity<TimeOffRequestResponse> createTimeOffRequest(
+            @RequestBody CreateTimeOffRequestRequest request) {
+        TimeOffRequestResponse response = timeOffRequestService.createTimeOffRequest(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * Returns vacation requests of the current user.
+     * Returns time-off requests of the current user.
      */
     @GetMapping("/my")
-    public ResponseEntity<List<VacationRequestResponse>> getMyVacationRequests() {
-        return ResponseEntity.ok(vacationRequestService.getMyVacationRequests());
+    public ResponseEntity<List<TimeOffRequestResponse>> getMyTimeOffRequests() {
+        return ResponseEntity.ok(timeOffRequestService.getMyTimeOffRequests());
     }
 
     /**
      * Returns current user's request history with filters and pagination.
      */
     @GetMapping("/my/history")
-    public ResponseEntity<Page<VacationRequestResponse>> getMyVacationRequestsHistory(
-            @RequestParam(value = "status", required = false) VacationRequestStatus status,
+    public ResponseEntity<Page<TimeOffRequestResponse>> getMyTimeOffRequestsHistory(
+            @RequestParam(value = "status", required = false) TimeOffRequestStatus status,
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate fromDate,
@@ -64,7 +64,7 @@ public class VacationRequestController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return ResponseEntity.ok(vacationRequestService.getMyVacationRequestsHistory(
+        return ResponseEntity.ok(timeOffRequestService.getMyTimeOffRequestsHistory(
                 status,
                 year,
                 fromDate,
@@ -74,10 +74,11 @@ public class VacationRequestController {
     }
 
     /**
-     * Returns one vacation request by id if it belongs to the current user.
+     * Returns one time-off request by id if it belongs to the current user.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<VacationRequestResponse> getVacationRequestById(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(vacationRequestService.getVacationRequestById(id));
+    public ResponseEntity<TimeOffRequestResponse> getTimeOffRequestById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(timeOffRequestService.getTimeOffRequestById(id));
     }
 }
+

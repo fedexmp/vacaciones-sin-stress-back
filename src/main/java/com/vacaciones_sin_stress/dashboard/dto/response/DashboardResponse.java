@@ -1,7 +1,7 @@
 package com.vacaciones_sin_stress.dashboard.dto.response;
 
 import com.vacaciones_sin_stress.calendar.dto.response.CalendarEventResponse;
-import com.vacaciones_sin_stress.vacation.dto.response.VacationRequestResponse;
+import com.vacaciones_sin_stress.vacation.dto.response.TimeOffRequestResponse;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,6 +17,7 @@ public class DashboardResponse {
     private Integer currentYear;
     private Integer availableDaysCurrentYear;
     private Integer usedDaysCurrentYear;
-    private List<VacationRequestResponse> recentRequests;
+    private List<TimeOffRequestResponse> recentRequests;
     private List<CalendarEventResponse> upcomingTeamAbsences;
 }
+

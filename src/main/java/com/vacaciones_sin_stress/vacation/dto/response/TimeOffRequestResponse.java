@@ -1,7 +1,7 @@
 package com.vacaciones_sin_stress.vacation.dto.response;
 
 import com.vacaciones_sin_stress.common.enums.EventType;
-import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
+import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VacationRequestResponse {
+public class TimeOffRequestResponse {
 
     private Long id;
     private Long userId;
@@ -23,8 +23,8 @@ public class VacationRequestResponse {
     private Integer businessDays;
     private EventType eventType;
     private String comment;
-    private VacationRequestStatus status;
-    private VacationRequestValidationResponse validation;
+    private TimeOffRequestStatus status;
+    private TimeOffRequestValidationResponse validation;
     private LocalDateTime requestedAt;
     private LocalDateTime reviewedByLeaderAt;
     private LocalDateTime reviewedByHrAt;
@@ -37,3 +37,4 @@ public class VacationRequestResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+
