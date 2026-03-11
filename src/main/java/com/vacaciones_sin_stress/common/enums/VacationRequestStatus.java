@@ -5,5 +5,6 @@ public enum VacationRequestStatus {
     PENDING_LEADER,
     PENDING_HR,
     APPROVED,
-    REJECTED
+    REJECTED_LEADER,
+    REJECTED_HR
 }

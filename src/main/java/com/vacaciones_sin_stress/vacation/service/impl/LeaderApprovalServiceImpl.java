@@ -9,7 +9,7 @@ import com.vacaciones_sin_stress.common.exception.ForbiddenOperationException;
 import com.vacaciones_sin_stress.common.exception.ResourceNotFoundException;
 import com.vacaciones_sin_stress.user.entity.User;
 import com.vacaciones_sin_stress.user.repository.UserRepository;
-import com.vacaciones_sin_stress.vacation.dto.request.ApprovalActionRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
@@ -85,7 +85,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
      */
     @Override
     @Transactional
-    public ApprovalResponse approve(Long requestId, ApprovalActionRequest actionRequest) {
+    public ApprovalResponse approve(Long requestId) {
         User leader = requireLeader();
         VacationRequest vacationRequest = findAndValidatePendingRequest(requestId, leader);
 
@@ -103,16 +103,16 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
      */
     @Override
     @Transactional
-    public ApprovalResponse reject(Long requestId, ApprovalActionRequest actionRequest) {
+    public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
         User leader = requireLeader();
         VacationRequest vacationRequest = findAndValidatePendingRequest(requestId, leader);
 
-        String rejectionReason = resolveRejectionReason(actionRequest);
+        String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
         if (!StringUtils.hasText(rejectionReason)) {
             throw new ApiValidationException("rejectionReason is required for rejection");
         }
 
-        vacationRequest.setStatus(VacationRequestStatus.REJECTED);
+        vacationRequest.setStatus(VacationRequestStatus.REJECTED_LEADER);
         vacationRequest.setReviewedByLeaderAt(LocalDateTime.now());
         vacationRequest.setRejectionReason(rejectionReason.trim());
         vacationRequest.setApprovedByLeaderId(leader.getId());
@@ -147,16 +147,6 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         }
 
         return vacationRequest;
-    }
-
-    private String resolveRejectionReason(ApprovalActionRequest actionRequest) {
-        if (actionRequest == null) {
-            return null;
-        }
-        if (StringUtils.hasText(actionRequest.getRejectionReason())) {
-            return actionRequest.getRejectionReason();
-        }
-        return actionRequest.getReason();
     }
 
     private void validatePeriod(LocalDate fromDate, LocalDate toDate) {

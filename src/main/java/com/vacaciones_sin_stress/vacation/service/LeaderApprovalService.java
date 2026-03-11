@@ -1,6 +1,6 @@
 package com.vacaciones_sin_stress.vacation.service;
 
-import com.vacaciones_sin_stress.vacation.dto.request.ApprovalActionRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
 import org.springframework.data.domain.Page;
@@ -43,10 +43,9 @@ public interface LeaderApprovalService {
      * Approves a pending request as direct leader.
      *
      * @param requestId request id
-     * @param actionRequest optional action payload
      * @return updated request
      */
-    ApprovalResponse approve(Long requestId, ApprovalActionRequest actionRequest);
+    ApprovalResponse approve(Long requestId);
 
     /**
      * Rejects a pending request as direct leader.
@@ -55,5 +54,5 @@ public interface LeaderApprovalService {
      * @param actionRequest action payload containing rejection reason
      * @return updated request
      */
-    ApprovalResponse reject(Long requestId, ApprovalActionRequest actionRequest);
+    ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest);
 }

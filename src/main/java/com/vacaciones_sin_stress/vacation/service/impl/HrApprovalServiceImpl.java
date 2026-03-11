@@ -13,7 +13,8 @@ import com.vacaciones_sin_stress.common.exception.ConflictException;
 import com.vacaciones_sin_stress.common.exception.ForbiddenOperationException;
 import com.vacaciones_sin_stress.common.exception.ResourceNotFoundException;
 import com.vacaciones_sin_stress.user.entity.User;
-import com.vacaciones_sin_stress.vacation.dto.request.ApprovalActionRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
@@ -88,7 +89,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
      */
     @Override
     @Transactional
-    public ApprovalResponse approve(Long requestId, ApprovalActionRequest actionRequest) {
+    public ApprovalResponse approve(Long requestId, HrApprovalRequest actionRequest) {
         User hrUser = requireHrUser();
         VacationRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
         VacationBalance vacationBalance = vacationBalanceRepository
@@ -127,16 +128,16 @@ public class HrApprovalServiceImpl implements HrApprovalService {
      */
     @Override
     @Transactional
-    public ApprovalResponse reject(Long requestId, ApprovalActionRequest actionRequest) {
+    public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
         User hrUser = requireHrUser();
         VacationRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
 
-        String rejectionReason = resolveRejectionReason(actionRequest);
+        String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
         if (!StringUtils.hasText(rejectionReason)) {
             throw new ApiValidationException("rejectionReason is required for rejection");
         }
 
-        vacationRequest.setStatus(VacationRequestStatus.REJECTED);
+        vacationRequest.setStatus(VacationRequestStatus.REJECTED_HR);
         vacationRequest.setReviewedByHrAt(LocalDateTime.now());
         vacationRequest.setApprovedByHrId(hrUser.getId());
         vacationRequest.setRejectionReason(rejectionReason.trim());
@@ -179,7 +180,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     }
 
     private void applyClientValidation(VacationRequest vacationRequest,
-                                       ApprovalActionRequest actionRequest,
+                                       HrApprovalRequest actionRequest,
                                        User hrUser,
                                        LocalDateTime now) {
         if (actionRequest == null || actionRequest.getValidatedWithClient() == null) {
@@ -196,16 +197,6 @@ public class HrApprovalServiceImpl implements HrApprovalService {
 
         vacationRequest.setValidatedBy(null);
         vacationRequest.setValidatedAt(null);
-    }
-
-    private String resolveRejectionReason(ApprovalActionRequest actionRequest) {
-        if (actionRequest == null) {
-            return null;
-        }
-        if (StringUtils.hasText(actionRequest.getRejectionReason())) {
-            return actionRequest.getRejectionReason();
-        }
-        return actionRequest.getReason();
     }
 
     private void validatePeriod(LocalDate fromDate, LocalDate toDate) {

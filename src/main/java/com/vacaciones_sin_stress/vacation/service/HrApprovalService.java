@@ -1,6 +1,7 @@
 package com.vacaciones_sin_stress.vacation.service;
 
-import com.vacaciones_sin_stress.vacation.dto.request.ApprovalActionRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
 import org.springframework.data.domain.Page;
@@ -46,7 +47,7 @@ public interface HrApprovalService {
      * @param actionRequest optional payload
      * @return updated request
      */
-    ApprovalResponse approve(Long requestId, ApprovalActionRequest actionRequest);
+    ApprovalResponse approve(Long requestId, HrApprovalRequest actionRequest);
 
     /**
      * Rejects one request in PENDING_HR.
@@ -55,5 +56,5 @@ public interface HrApprovalService {
      * @param actionRequest payload containing rejection reason
      * @return updated request
      */
-    ApprovalResponse reject(Long requestId, ApprovalActionRequest actionRequest);
+    ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest);
 }

@@ -1,7 +1,7 @@
 package com.vacaciones_sin_stress.vacation.controller;
 
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
-import com.vacaciones_sin_stress.vacation.dto.request.ApprovalActionRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.vacation.service.LeaderApprovalService;
 import lombok.RequiredArgsConstructor;
@@ -68,9 +68,8 @@ public class LeaderApprovalController {
      * Approves a pending request as direct leader.
      */
     @PostMapping("/{id}/approve")
-    public ResponseEntity<ApprovalResponse> approve(@PathVariable("id") Long id,
-                                                    @RequestBody(required = false) ApprovalActionRequest request) {
-        return ResponseEntity.ok(leaderApprovalService.approve(id, request));
+    public ResponseEntity<ApprovalResponse> approve(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(leaderApprovalService.approve(id));
     }
 
     /**
@@ -78,7 +77,7 @@ public class LeaderApprovalController {
      */
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApprovalResponse> reject(@PathVariable("id") Long id,
-                                                   @RequestBody(required = false) ApprovalActionRequest request) {
+                                                   @RequestBody RejectApprovalRequest request) {
         return ResponseEntity.ok(leaderApprovalService.reject(id, request));
     }
 }

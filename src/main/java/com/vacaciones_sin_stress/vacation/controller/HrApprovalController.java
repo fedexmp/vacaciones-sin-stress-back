@@ -1,7 +1,8 @@
 package com.vacaciones_sin_stress.vacation.controller;
 
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
-import com.vacaciones_sin_stress.vacation.dto.request.ApprovalActionRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
+import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
 import com.vacaciones_sin_stress.vacation.service.HrApprovalService;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +70,7 @@ public class HrApprovalController {
      */
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApprovalResponse> approve(@PathVariable("id") Long id,
-                                                    @RequestBody(required = false) ApprovalActionRequest request) {
+                                                    @RequestBody(required = false) HrApprovalRequest request) {
         return ResponseEntity.ok(hrApprovalService.approve(id, request));
     }
 
@@ -78,7 +79,7 @@ public class HrApprovalController {
      */
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApprovalResponse> reject(@PathVariable("id") Long id,
-                                                   @RequestBody(required = false) ApprovalActionRequest request) {
+                                                   @RequestBody RejectApprovalRequest request) {
         return ResponseEntity.ok(hrApprovalService.reject(id, request));
     }
 }
