@@ -19,6 +19,12 @@ public class VacationRequestResponse {
     private LocalDateTime requestedAt;
     private LocalDateTime reviewedByLeaderAt;
     private LocalDateTime reviewedByHrAt;
+    private Long approvedByLeaderId;
+    private Long approvedByHrId;
+    private String rejectionReason;
+    private boolean validatedWithClient;
+    private Long validatedBy;
+    private LocalDateTime validatedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -37,6 +43,12 @@ public class VacationRequestResponse {
                                    LocalDateTime requestedAt,
                                    LocalDateTime reviewedByLeaderAt,
                                    LocalDateTime reviewedByHrAt,
+                                   Long approvedByLeaderId,
+                                   Long approvedByHrId,
+                                   String rejectionReason,
+                                   boolean validatedWithClient,
+                                   Long validatedBy,
+                                   LocalDateTime validatedAt,
                                    LocalDateTime createdAt,
                                    LocalDateTime updatedAt) {
         this.id = id;
@@ -51,6 +63,12 @@ public class VacationRequestResponse {
         this.requestedAt = requestedAt;
         this.reviewedByLeaderAt = reviewedByLeaderAt;
         this.reviewedByHrAt = reviewedByHrAt;
+        this.approvedByLeaderId = approvedByLeaderId;
+        this.approvedByHrId = approvedByHrId;
+        this.rejectionReason = rejectionReason;
+        this.validatedWithClient = validatedWithClient;
+        this.validatedBy = validatedBy;
+        this.validatedAt = validatedAt;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -149,6 +167,54 @@ public class VacationRequestResponse {
 
     public void setReviewedByHrAt(LocalDateTime reviewedByHrAt) {
         this.reviewedByHrAt = reviewedByHrAt;
+    }
+
+    public Long getApprovedByLeaderId() {
+        return approvedByLeaderId;
+    }
+
+    public void setApprovedByLeaderId(Long approvedByLeaderId) {
+        this.approvedByLeaderId = approvedByLeaderId;
+    }
+
+    public Long getApprovedByHrId() {
+        return approvedByHrId;
+    }
+
+    public void setApprovedByHrId(Long approvedByHrId) {
+        this.approvedByHrId = approvedByHrId;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public boolean isValidatedWithClient() {
+        return validatedWithClient;
+    }
+
+    public void setValidatedWithClient(boolean validatedWithClient) {
+        this.validatedWithClient = validatedWithClient;
+    }
+
+    public Long getValidatedBy() {
+        return validatedBy;
+    }
+
+    public void setValidatedBy(Long validatedBy) {
+        this.validatedBy = validatedBy;
+    }
+
+    public LocalDateTime getValidatedAt() {
+        return validatedAt;
+    }
+
+    public void setValidatedAt(LocalDateTime validatedAt) {
+        this.validatedAt = validatedAt;
     }
 
     public LocalDateTime getCreatedAt() {

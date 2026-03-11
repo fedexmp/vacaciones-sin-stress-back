@@ -14,7 +14,11 @@ import com.vacaciones_sin_stress.vacation.mapper.VacationRequestMapper;
 import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.BusinessDayCalculatorService;
 import com.vacaciones_sin_stress.vacation.service.VacationRequestService;
+import com.vacaciones_sin_stress.vacation.specification.VacationRequestSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -93,6 +97,30 @@ public class VacationRequestServiceImpl implements VacationRequestService {
     }
 
     /**
+     * Returns current user's request history with optional filters and pagination.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<VacationRequestResponse> getMyVacationRequestsHistory(VacationRequestStatus status,
+                                                                      Integer requestYear,
+                                                                      LocalDate fromDate,
+                                                                      LocalDate toDate,
+                                                                      Pageable pageable) {
+        validatePeriod(fromDate, toDate);
+
+        Long userId = currentUserService.getCurrentUser().getId();
+        Specification<VacationRequest> specification = Specification
+                .where(VacationRequestSpecifications.forUser(userId))
+                .and(VacationRequestSpecifications.withStatus(status))
+                .and(VacationRequestSpecifications.withRequestYear(requestYear))
+                .and(VacationRequestSpecifications.withFromDate(fromDate))
+                .and(VacationRequestSpecifications.withToDate(toDate));
+
+        return vacationRequestRepository.findAll(specification, pageable)
+                .map(vacationRequestMapper::toResponse);
+    }
+
+    /**
      * Returns a single request only if it belongs to the current user.
      */
     @Override
@@ -124,6 +152,12 @@ public class VacationRequestServiceImpl implements VacationRequestService {
         }
         if (startDate.getYear() != endDate.getYear()) {
             throw new ApiValidationException("startDate and endDate must belong to the same year");
+        }
+    }
+
+    private void validatePeriod(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new ApiValidationException("fromDate must be before or equal to toDate");
         }
     }
 

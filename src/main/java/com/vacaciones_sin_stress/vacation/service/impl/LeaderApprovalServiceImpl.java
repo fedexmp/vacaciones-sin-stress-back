@@ -15,11 +15,16 @@ import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
 import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.LeaderApprovalService;
+import com.vacaciones_sin_stress.vacation.specification.VacationRequestSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -47,6 +52,32 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
                 .stream()
                 .map(leaderApprovalMapper::toApprovalResponse)
                 .toList();
+    }
+
+    /**
+     * Returns leader's historical involvement with optional filters and pagination.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ApprovalResponse> getLeaderHistory(VacationRequestStatus status,
+                                                   Long userId,
+                                                   Integer requestYear,
+                                                   LocalDate fromDate,
+                                                   LocalDate toDate,
+                                                   Pageable pageable) {
+        User leader = requireLeader();
+        validatePeriod(fromDate, toDate);
+
+        Specification<VacationRequest> specification = Specification
+                .where(VacationRequestSpecifications.forLeaderInvolvement(leader.getId()))
+                .and(VacationRequestSpecifications.withStatus(status))
+                .and(VacationRequestSpecifications.withUserId(userId))
+                .and(VacationRequestSpecifications.withRequestYear(requestYear))
+                .and(VacationRequestSpecifications.withFromDate(fromDate))
+                .and(VacationRequestSpecifications.withToDate(toDate));
+
+        return vacationRequestRepository.findAll(specification, pageable)
+                .map(leaderApprovalMapper::toApprovalResponse);
     }
 
     /**
@@ -84,7 +115,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         vacationRequest.setStatus(VacationRequestStatus.REJECTED);
         vacationRequest.setReviewedByLeaderAt(LocalDateTime.now());
         vacationRequest.setRejectionReason(rejectionReason.trim());
-        vacationRequest.setApprovedByLeaderId(null);
+        vacationRequest.setApprovedByLeaderId(leader.getId());
 
         VacationRequest updated = vacationRequestRepository.save(vacationRequest);
         return leaderApprovalMapper.toApprovalResponse(updated);
@@ -126,5 +157,11 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
             return actionRequest.getRejectionReason();
         }
         return actionRequest.getReason();
+    }
+
+    private void validatePeriod(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new ApiValidationException("fromDate must be before or equal to toDate");
+        }
     }
 }

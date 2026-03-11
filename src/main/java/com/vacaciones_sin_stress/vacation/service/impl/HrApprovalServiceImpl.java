@@ -19,11 +19,16 @@ import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
 import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.HrApprovalService;
+import com.vacaciones_sin_stress.vacation.specification.VacationRequestSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,6 +56,31 @@ public class HrApprovalServiceImpl implements HrApprovalService {
                 .stream()
                 .map(approvalMapper::toApprovalResponse)
                 .toList();
+    }
+
+    /**
+     * Returns HR historical view with optional filters and pagination.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ApprovalResponse> getHrHistory(VacationRequestStatus status,
+                                               Long userId,
+                                               Integer requestYear,
+                                               LocalDate fromDate,
+                                               LocalDate toDate,
+                                               Pageable pageable) {
+        requireHrUser();
+        validatePeriod(fromDate, toDate);
+
+        Specification<VacationRequest> specification = Specification
+                .where(VacationRequestSpecifications.withStatus(status))
+                .and(VacationRequestSpecifications.withUserId(userId))
+                .and(VacationRequestSpecifications.withRequestYear(requestYear))
+                .and(VacationRequestSpecifications.withFromDate(fromDate))
+                .and(VacationRequestSpecifications.withToDate(toDate));
+
+        return vacationRequestRepository.findAll(specification, pageable)
+                .map(approvalMapper::toApprovalResponse);
     }
 
     /**
@@ -98,7 +128,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     @Override
     @Transactional
     public ApprovalResponse reject(Long requestId, ApprovalActionRequest actionRequest) {
-        requireHrUser();
+        User hrUser = requireHrUser();
         VacationRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
 
         String rejectionReason = resolveRejectionReason(actionRequest);
@@ -108,7 +138,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
 
         vacationRequest.setStatus(VacationRequestStatus.REJECTED);
         vacationRequest.setReviewedByHrAt(LocalDateTime.now());
-        vacationRequest.setApprovedByHrId(null);
+        vacationRequest.setApprovedByHrId(hrUser.getId());
         vacationRequest.setRejectionReason(rejectionReason.trim());
 
         VacationRequest updated = vacationRequestRepository.save(vacationRequest);
@@ -176,5 +206,11 @@ public class HrApprovalServiceImpl implements HrApprovalService {
             return actionRequest.getRejectionReason();
         }
         return actionRequest.getReason();
+    }
+
+    private void validatePeriod(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new ApiValidationException("fromDate must be before or equal to toDate");
+        }
     }
 }
