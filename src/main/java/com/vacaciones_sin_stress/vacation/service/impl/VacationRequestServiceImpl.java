@@ -1,6 +1,7 @@
 package com.vacaciones_sin_stress.vacation.service.impl;
 
 import com.vacaciones_sin_stress.auth.service.CurrentUserService;
+import com.vacaciones_sin_stress.common.enums.EventType;
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
 import com.vacaciones_sin_stress.common.exception.ApiValidationException;
 import com.vacaciones_sin_stress.common.exception.ConflictException;
@@ -9,7 +10,7 @@ import com.vacaciones_sin_stress.common.exception.ResourceNotFoundException;
 import com.vacaciones_sin_stress.user.entity.User;
 import com.vacaciones_sin_stress.vacation.dto.request.CreateVacationRequestRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.VacationRequestResponse;
-import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
+import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import com.vacaciones_sin_stress.vacation.mapper.VacationRequestMapper;
 import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.BusinessDayCalculatorService;
@@ -56,21 +57,22 @@ public class VacationRequestServiceImpl implements VacationRequestService {
 
         int businessDays = businessDayCalculatorService.calculateBusinessDays(startDate, endDate);
         if (businessDays <= 0) {
-            throw new ApiValidationException("Vacation request must include at least one business day");
+            throw new ApiValidationException("Request must include at least one business day");
         }
 
         if (!vacationRequestRepository
                 .findApprovedOverlappingRequests(currentUser.getId(), startDate, endDate)
                 .isEmpty()) {
-            throw new ConflictException("Vacation request overlaps with an approved request");
+            throw new ConflictException("Request overlaps with an approved request");
         }
 
-        VacationRequest vacationRequest = VacationRequest.builder()
+        TimeOffRequest vacationRequest = TimeOffRequest.builder()
                 .userId(currentUser.getId())
                 .startDate(startDate)
                 .endDate(endDate)
                 .requestYear(requestYear)
                 .businessDays(businessDays)
+                .eventType(request.getEventType())
                 .comment(trimToNull(request.getComment()))
                 .status(VacationRequestStatus.PENDING_LEADER)
                 .requestedAt(LocalDateTime.now())
@@ -79,7 +81,7 @@ public class VacationRequestServiceImpl implements VacationRequestService {
                 .validatedWithClient(false)
                 .build();
 
-        VacationRequest savedRequest = vacationRequestRepository.save(vacationRequest);
+        TimeOffRequest savedRequest = vacationRequestRepository.save(vacationRequest);
         return vacationRequestMapper.toResponse(savedRequest);
     }
 
@@ -109,7 +111,7 @@ public class VacationRequestServiceImpl implements VacationRequestService {
         validatePeriod(fromDate, toDate);
 
         Long userId = currentUserService.getCurrentUser().getId();
-        Specification<VacationRequest> specification = Specification
+        Specification<TimeOffRequest> specification = Specification
                 .where(VacationRequestSpecifications.forUser(userId))
                 .and(VacationRequestSpecifications.withStatus(status))
                 .and(VacationRequestSpecifications.withRequestYear(requestYear))
@@ -127,7 +129,7 @@ public class VacationRequestServiceImpl implements VacationRequestService {
     @Transactional(readOnly = true)
     public VacationRequestResponse getVacationRequestById(Long requestId) {
         User currentUser = currentUserService.getCurrentUser();
-        VacationRequest vacationRequest = vacationRequestRepository.findById(requestId)
+        TimeOffRequest vacationRequest = vacationRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vacation request not found: " + requestId));
 
         if (!vacationRequest.getUserId().equals(currentUser.getId())) {
@@ -143,6 +145,12 @@ public class VacationRequestServiceImpl implements VacationRequestService {
         }
         if (request.getStartDate() == null || request.getEndDate() == null) {
             throw new ApiValidationException("startDate and endDate are required");
+        }
+        if (request.getEventType() == null) {
+            throw new ApiValidationException("eventType is required and must be VACATION or LICENCIA");
+        }
+        if (request.getEventType() != EventType.VACATION && request.getEventType() != EventType.LICENCIA) {
+            throw new ApiValidationException("eventType is invalid");
         }
     }
 

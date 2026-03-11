@@ -16,7 +16,7 @@ import com.vacaciones_sin_stress.user.entity.User;
 import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
-import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
+import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
 import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.HrApprovalService;
@@ -73,7 +73,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         requireHrUser();
         validatePeriod(fromDate, toDate);
 
-        Specification<VacationRequest> specification = Specification
+        Specification<TimeOffRequest> specification = Specification
                 .where(VacationRequestSpecifications.withStatus(status))
                 .and(VacationRequestSpecifications.withUserId(userId))
                 .and(VacationRequestSpecifications.withRequestYear(requestYear))
@@ -91,7 +91,80 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     @Transactional
     public ApprovalResponse approve(Long requestId, HrApprovalRequest actionRequest) {
         User hrUser = requireHrUser();
-        VacationRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
+        TimeOffRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
+        if (vacationRequest.getEventType() == EventType.VACATION) {
+            discountVacationBalance(vacationRequest, hrUser);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        vacationRequest.setStatus(VacationRequestStatus.APPROVED);
+        vacationRequest.setApprovedByHrId(hrUser.getId());
+        vacationRequest.setReviewedByHrAt(now);
+        vacationRequest.setRejectionReason(null);
+        applyClientValidation(vacationRequest, actionRequest, hrUser, now);
+
+        TimeOffRequest updatedRequest = vacationRequestRepository.save(vacationRequest);
+        createCalendarEventIfNeeded(updatedRequest);
+        return approvalMapper.toApprovalResponse(updatedRequest);
+    }
+
+    /**
+     * Rejects one PENDING_HR request.
+     */
+    @Override
+    @Transactional
+    public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
+        User hrUser = requireHrUser();
+        TimeOffRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
+
+        String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
+        if (!StringUtils.hasText(rejectionReason)) {
+            throw new ApiValidationException("rejectionReason is required for rejection");
+        }
+
+        vacationRequest.setStatus(VacationRequestStatus.REJECTED_HR);
+        vacationRequest.setReviewedByHrAt(LocalDateTime.now());
+        vacationRequest.setApprovedByHrId(hrUser.getId());
+        vacationRequest.setRejectionReason(rejectionReason.trim());
+
+        TimeOffRequest updated = vacationRequestRepository.save(vacationRequest);
+        return approvalMapper.toApprovalResponse(updated);
+    }
+
+    private User requireHrUser() {
+        User currentUser = currentUserService.getCurrentUser();
+        if (currentUser.getRole() != Role.HR) {
+            throw new ForbiddenOperationException("Only HR users can access this resource");
+        }
+        return currentUser;
+    }
+
+    private TimeOffRequest findPendingHrRequestForUpdate(Long requestId) {
+        TimeOffRequest vacationRequest = vacationRequestRepository.findByIdForUpdate(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vacation request not found: " + requestId));
+        if (vacationRequest.getStatus() != VacationRequestStatus.PENDING_HR) {
+            throw new ConflictException("Vacation request is not in PENDING_HR status");
+        }
+        return vacationRequest;
+    }
+
+    private void createCalendarEventIfNeeded(TimeOffRequest vacationRequest) {
+        if (calendarEventRepository.existsByVacationRequestId(vacationRequest.getId())) {
+            return;
+        }
+
+        CalendarEvent event = CalendarEvent.builder()
+                .userId(vacationRequest.getUserId())
+                .vacationRequestId(vacationRequest.getId())
+                .title(resolveEventTitle(vacationRequest.getEventType()))
+                .startDate(vacationRequest.getStartDate())
+                .endDate(vacationRequest.getEndDate())
+                .eventType(vacationRequest.getEventType())
+                .build();
+        calendarEventRepository.save(event);
+    }
+
+    private void discountVacationBalance(TimeOffRequest vacationRequest, User hrUser) {
         VacationBalance vacationBalance = vacationBalanceRepository
                 .findByUserIdAndYearForUpdate(vacationRequest.getUserId(), vacationRequest.getRequestYear())
                 .orElseThrow(() -> new ConflictException(
@@ -109,77 +182,17 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         vacationBalance.setUsedDays(updatedUsedDays);
         vacationBalance.setAvailableDays(currentTotalDays - updatedUsedDays);
         vacationBalance.setUpdatedBy(hrUser.getId());
-
-        LocalDateTime now = LocalDateTime.now();
-        vacationRequest.setStatus(VacationRequestStatus.APPROVED);
-        vacationRequest.setApprovedByHrId(hrUser.getId());
-        vacationRequest.setReviewedByHrAt(now);
-        vacationRequest.setRejectionReason(null);
-        applyClientValidation(vacationRequest, actionRequest, hrUser, now);
-
         vacationBalanceRepository.save(vacationBalance);
-        VacationRequest updatedRequest = vacationRequestRepository.save(vacationRequest);
-        createCalendarEventIfNeeded(updatedRequest);
-        return approvalMapper.toApprovalResponse(updatedRequest);
     }
 
-    /**
-     * Rejects one PENDING_HR request.
-     */
-    @Override
-    @Transactional
-    public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
-        User hrUser = requireHrUser();
-        VacationRequest vacationRequest = findPendingHrRequestForUpdate(requestId);
-
-        String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
-        if (!StringUtils.hasText(rejectionReason)) {
-            throw new ApiValidationException("rejectionReason is required for rejection");
+    private String resolveEventTitle(EventType eventType) {
+        if (eventType == EventType.LICENCIA) {
+            return "Sick leave approved";
         }
-
-        vacationRequest.setStatus(VacationRequestStatus.REJECTED_HR);
-        vacationRequest.setReviewedByHrAt(LocalDateTime.now());
-        vacationRequest.setApprovedByHrId(hrUser.getId());
-        vacationRequest.setRejectionReason(rejectionReason.trim());
-
-        VacationRequest updated = vacationRequestRepository.save(vacationRequest);
-        return approvalMapper.toApprovalResponse(updated);
+        return "Vacation approved";
     }
 
-    private User requireHrUser() {
-        User currentUser = currentUserService.getCurrentUser();
-        if (currentUser.getRole() != Role.HR) {
-            throw new ForbiddenOperationException("Only HR users can access this resource");
-        }
-        return currentUser;
-    }
-
-    private VacationRequest findPendingHrRequestForUpdate(Long requestId) {
-        VacationRequest vacationRequest = vacationRequestRepository.findByIdForUpdate(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vacation request not found: " + requestId));
-        if (vacationRequest.getStatus() != VacationRequestStatus.PENDING_HR) {
-            throw new ConflictException("Vacation request is not in PENDING_HR status");
-        }
-        return vacationRequest;
-    }
-
-    private void createCalendarEventIfNeeded(VacationRequest vacationRequest) {
-        if (calendarEventRepository.existsByVacationRequestId(vacationRequest.getId())) {
-            return;
-        }
-
-        CalendarEvent event = CalendarEvent.builder()
-                .userId(vacationRequest.getUserId())
-                .vacationRequestId(vacationRequest.getId())
-                .title("Vacation approved")
-                .startDate(vacationRequest.getStartDate())
-                .endDate(vacationRequest.getEndDate())
-                .eventType(EventType.VACATION)
-                .build();
-        calendarEventRepository.save(event);
-    }
-
-    private void applyClientValidation(VacationRequest vacationRequest,
+    private void applyClientValidation(TimeOffRequest vacationRequest,
                                        HrApprovalRequest actionRequest,
                                        User hrUser,
                                        LocalDateTime now) {

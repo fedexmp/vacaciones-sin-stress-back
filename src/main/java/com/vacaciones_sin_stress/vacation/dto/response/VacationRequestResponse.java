@@ -1,5 +1,6 @@
 package com.vacaciones_sin_stress.vacation.dto.response;
 
+import com.vacaciones_sin_stress.common.enums.EventType;
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ public class VacationRequestResponse {
     private LocalDate endDate;
     private Integer requestYear;
     private Integer businessDays;
+    private EventType eventType;
     private String comment;
     private VacationRequestStatus status;
     private VacationRequestValidationResponse validation;

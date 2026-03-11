@@ -11,7 +11,7 @@ import com.vacaciones_sin_stress.user.entity.User;
 import com.vacaciones_sin_stress.user.repository.UserRepository;
 import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
-import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
+import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import com.vacaciones_sin_stress.vacation.mapper.LeaderApprovalMapper;
 import com.vacaciones_sin_stress.vacation.repository.VacationRequestRepository;
 import com.vacaciones_sin_stress.vacation.service.LeaderApprovalService;
@@ -68,7 +68,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         User leader = requireLeader();
         validatePeriod(fromDate, toDate);
 
-        Specification<VacationRequest> specification = Specification
+        Specification<TimeOffRequest> specification = Specification
                 .where(VacationRequestSpecifications.forLeaderInvolvement(leader.getId()))
                 .and(VacationRequestSpecifications.withStatus(status))
                 .and(VacationRequestSpecifications.withUserId(userId))
@@ -87,14 +87,14 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
     @Transactional
     public ApprovalResponse approve(Long requestId) {
         User leader = requireLeader();
-        VacationRequest vacationRequest = findAndValidatePendingRequest(requestId, leader);
+        TimeOffRequest vacationRequest = findAndValidatePendingRequest(requestId, leader);
 
         vacationRequest.setStatus(VacationRequestStatus.PENDING_HR);
         vacationRequest.setApprovedByLeaderId(leader.getId());
         vacationRequest.setReviewedByLeaderAt(LocalDateTime.now());
         vacationRequest.setRejectionReason(null);
 
-        VacationRequest updated = vacationRequestRepository.save(vacationRequest);
+        TimeOffRequest updated = vacationRequestRepository.save(vacationRequest);
         return leaderApprovalMapper.toApprovalResponse(updated);
     }
 
@@ -105,7 +105,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
     @Transactional
     public ApprovalResponse reject(Long requestId, RejectApprovalRequest actionRequest) {
         User leader = requireLeader();
-        VacationRequest vacationRequest = findAndValidatePendingRequest(requestId, leader);
+        TimeOffRequest vacationRequest = findAndValidatePendingRequest(requestId, leader);
 
         String rejectionReason = actionRequest != null ? actionRequest.getRejectionReason() : null;
         if (!StringUtils.hasText(rejectionReason)) {
@@ -117,7 +117,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         vacationRequest.setRejectionReason(rejectionReason.trim());
         vacationRequest.setApprovedByLeaderId(leader.getId());
 
-        VacationRequest updated = vacationRequestRepository.save(vacationRequest);
+        TimeOffRequest updated = vacationRequestRepository.save(vacationRequest);
         return leaderApprovalMapper.toApprovalResponse(updated);
     }
 
@@ -129,8 +129,8 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         return currentUser;
     }
 
-    private VacationRequest findAndValidatePendingRequest(Long requestId, User leader) {
-        VacationRequest vacationRequest = vacationRequestRepository.findById(requestId)
+    private TimeOffRequest findAndValidatePendingRequest(Long requestId, User leader) {
+        TimeOffRequest vacationRequest = vacationRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vacation request not found: " + requestId));
 
         if (vacationRequest.getStatus() != VacationRequestStatus.PENDING_LEADER) {

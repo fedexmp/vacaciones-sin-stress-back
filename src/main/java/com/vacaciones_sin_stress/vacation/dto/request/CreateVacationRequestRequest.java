@@ -1,5 +1,6 @@
 package com.vacaciones_sin_stress.vacation.dto.request;
 
+import com.vacaciones_sin_stress.common.enums.EventType;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,5 +15,6 @@ public class CreateVacationRequestRequest {
 
     private LocalDate startDate;
     private LocalDate endDate;
+    private EventType eventType;
     private String comment;
 }

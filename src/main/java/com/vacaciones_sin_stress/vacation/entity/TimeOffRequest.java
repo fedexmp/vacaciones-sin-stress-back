@@ -1,5 +1,6 @@
 package com.vacaciones_sin_stress.vacation.entity;
 
+import com.vacaciones_sin_stress.common.enums.EventType;
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,7 +37,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class VacationRequest {
+public class TimeOffRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,6 +57,10 @@ public class VacationRequest {
 
     @Column(name = "business_days", nullable = false)
     private Integer businessDays;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", nullable = false, length = 30)
+    private EventType eventType;
 
     @Column(length = 500)
     private String comment;

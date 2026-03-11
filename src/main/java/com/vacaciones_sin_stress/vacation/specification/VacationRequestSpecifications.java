@@ -2,7 +2,7 @@ package com.vacaciones_sin_stress.vacation.specification;
 
 import com.vacaciones_sin_stress.common.enums.VacationRequestStatus;
 import com.vacaciones_sin_stress.user.entity.User;
-import com.vacaciones_sin_stress.vacation.entity.VacationRequest;
+import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -15,33 +15,33 @@ public final class VacationRequestSpecifications {
     private VacationRequestSpecifications() {
     }
 
-    public static Specification<VacationRequest> withUserId(Long userId) {
+    public static Specification<TimeOffRequest> withUserId(Long userId) {
         return (root, query, cb) -> userId == null ? cb.conjunction() : cb.equal(root.get("userId"), userId);
     }
 
-    public static Specification<VacationRequest> withStatus(VacationRequestStatus status) {
+    public static Specification<TimeOffRequest> withStatus(VacationRequestStatus status) {
         return (root, query, cb) -> status == null ? cb.conjunction() : cb.equal(root.get("status"), status);
     }
 
-    public static Specification<VacationRequest> withRequestYear(Integer year) {
+    public static Specification<TimeOffRequest> withRequestYear(Integer year) {
         return (root, query, cb) -> year == null ? cb.conjunction() : cb.equal(root.get("requestYear"), year);
     }
 
-    public static Specification<VacationRequest> withFromDate(LocalDate fromDate) {
+    public static Specification<TimeOffRequest> withFromDate(LocalDate fromDate) {
         return (root, query, cb) -> fromDate == null ? cb.conjunction()
                 : cb.greaterThanOrEqualTo(root.get("startDate"), fromDate);
     }
 
-    public static Specification<VacationRequest> withToDate(LocalDate toDate) {
+    public static Specification<TimeOffRequest> withToDate(LocalDate toDate) {
         return (root, query, cb) -> toDate == null ? cb.conjunction()
                 : cb.lessThanOrEqualTo(root.get("endDate"), toDate);
     }
 
-    public static Specification<VacationRequest> forUser(Long userId) {
+    public static Specification<TimeOffRequest> forUser(Long userId) {
         return (root, query, cb) -> cb.equal(root.get("userId"), userId);
     }
 
-    public static Specification<VacationRequest> forLeaderInvolvement(Long leaderId) {
+    public static Specification<TimeOffRequest> forLeaderInvolvement(Long leaderId) {
         return (root, query, cb) -> {
             var reviewedByLeader = cb.equal(root.get("approvedByLeaderId"), leaderId);
             var directReportSubquery = query.subquery(Long.class);
