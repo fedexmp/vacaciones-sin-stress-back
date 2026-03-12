@@ -22,4 +22,10 @@ public class VacationBalanceAdminResponse {
     private Long updatedBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Enriched fields — populated by the service layer
+    private String userName;
+    private String userEmail;
+    private String createdByName;
+    private String updatedByName;
 }

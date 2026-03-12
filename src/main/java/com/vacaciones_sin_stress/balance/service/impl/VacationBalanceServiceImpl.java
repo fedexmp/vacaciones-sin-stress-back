@@ -53,7 +53,7 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
         vacationBalance.setUpdatedBy(hrUser.getId());
 
         VacationBalance saved = vacationBalanceRepository.save(vacationBalance);
-        return vacationBalanceMapper.toAdminResponse(saved);
+        return enrich(vacationBalanceMapper.toAdminResponse(saved));
     }
 
     /**
@@ -78,7 +78,7 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
         existingBalance.setUpdatedBy(hrUser.getId());
 
         VacationBalance saved = vacationBalanceRepository.save(existingBalance);
-        return vacationBalanceMapper.toAdminResponse(saved);
+        return enrich(vacationBalanceMapper.toAdminResponse(saved));
     }
 
     /**
@@ -91,6 +91,7 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
         return vacationBalanceRepository.findAllByOrderByUserIdAscYearDesc()
                 .stream()
                 .map(vacationBalanceMapper::toAdminResponse)
+                .map(this::enrich)
                 .toList();
     }
 
@@ -104,7 +105,7 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
         VacationBalance balance = vacationBalanceRepository.findByUserIdAndYear(userId, year)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Vacation balance not found for user " + userId + " and year " + year));
-        return vacationBalanceMapper.toAdminResponse(balance);
+        return enrich(vacationBalanceMapper.toAdminResponse(balance));
     }
 
     /**
@@ -118,6 +119,7 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
         return vacationBalanceRepository.findByUserIdOrderByYearDesc(userId)
                 .stream()
                 .map(vacationBalanceMapper::toAdminResponse)
+                .map(this::enrich)
                 .toList();
     }
 
@@ -145,6 +147,22 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Vacation balance not found for year " + year));
         return vacationBalanceMapper.toResponse(balance);
+    }
+
+    private VacationBalanceAdminResponse enrich(VacationBalanceAdminResponse r) {
+        userRepository.findById(r.getUserId()).ifPresent(u -> {
+            r.setUserName(u.getFullName());
+            r.setUserEmail(u.getEmail());
+        });
+        if (r.getCreatedBy() != null) {
+            userRepository.findById(r.getCreatedBy())
+                    .ifPresent(u -> r.setCreatedByName(u.getFullName()));
+        }
+        if (r.getUpdatedBy() != null) {
+            userRepository.findById(r.getUpdatedBy())
+                    .ifPresent(u -> r.setUpdatedByName(u.getFullName()));
+        }
+        return r;
     }
 
     private User requireHrUser() {
