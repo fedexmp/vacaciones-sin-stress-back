@@ -11,6 +11,7 @@ import com.vacaciones_sin_stress.notification.enums.NotificationType;
 import com.vacaciones_sin_stress.notification.mapper.NotificationMapper;
 import com.vacaciones_sin_stress.notification.service.NotificationService;
 import com.vacaciones_sin_stress.user.entity.User;
+import com.vacaciones_sin_stress.user.repository.UserRepository;
 import com.vacaciones_sin_stress.vacation.entity.TimeOffRequest;
 import com.vacaciones_sin_stress.vacation.repository.TimeOffRequestRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final TimeOffRequestRepository timeOffRequestRepository;
     private final CurrentUserService currentUserService;
     private final NotificationMapper notificationMapper;
+    private final UserRepository userRepository;
 
     /**
      * Returns own unseen final outcomes plus pending actions for leader/hr roles.
@@ -102,6 +104,7 @@ public class NotificationServiceImpl implements NotificationService {
         response.setType(NotificationType.PENDING_ACTION);
         response.setActionRequired(true);
         response.setViewed(false);
+        enrichWithUser(response);
         return response;
     }
 
@@ -110,7 +113,17 @@ public class NotificationServiceImpl implements NotificationService {
         response.setType(NotificationType.REQUEST_RESULT);
         response.setActionRequired(false);
         response.setViewed(timeOffRequest.isNotified());
+        enrichWithUser(response);
         return response;
+    }
+
+    private void enrichWithUser(NotificationResponse response) {
+        if (response.getUserId() != null) {
+            userRepository.findById(response.getUserId()).ifPresent(u -> {
+                response.setUserName(u.getFullName());
+                response.setUserEmail(u.getEmail());
+            });
+        }
     }
 
     private static LocalDateTime resolveSortDate(NotificationResponse notification) {

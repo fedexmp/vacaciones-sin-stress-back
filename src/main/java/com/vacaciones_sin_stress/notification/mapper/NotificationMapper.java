@@ -12,5 +12,7 @@ public interface NotificationMapper {
     @Mapping(target = "type", ignore = true)
     @Mapping(target = "actionRequired", ignore = true)
     @Mapping(target = "viewed", ignore = true)
+    @Mapping(target = "userName", ignore = true)
+    @Mapping(target = "userEmail", ignore = true)
     NotificationResponse toResponse(TimeOffRequest timeOffRequest);
 }

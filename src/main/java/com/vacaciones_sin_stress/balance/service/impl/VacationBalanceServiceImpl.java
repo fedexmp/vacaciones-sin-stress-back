@@ -109,6 +109,18 @@ public class VacationBalanceServiceImpl implements VacationBalanceService {
     }
 
     /**
+     * Deletes one balance by id.
+     */
+    @Override
+    @Transactional
+    public void deleteBalance(Long id) {
+        requireHrUser();
+        VacationBalance balance = vacationBalanceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vacation balance not found: " + id));
+        vacationBalanceRepository.delete(balance);
+    }
+
+    /**
      * Returns all balances of one user for HR.
      */
     @Override

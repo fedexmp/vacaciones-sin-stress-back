@@ -17,6 +17,8 @@ public class ApprovalResponse {
 
     private Long id;
     private Long userId;
+    private String userName;
+    private String userEmail;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer requestYear;

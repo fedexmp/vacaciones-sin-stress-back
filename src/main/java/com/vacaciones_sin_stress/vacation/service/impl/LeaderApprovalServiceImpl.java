@@ -50,6 +50,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
                 .findByStatusAndLeaderId(TimeOffRequestStatus.PENDING_LEADER, leader.getId())
                 .stream()
                 .map(leaderApprovalMapper::toApprovalResponse)
+                .map(this::enrichWithUser)
                 .toList();
     }
 
@@ -76,7 +77,8 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
                 .and(TimeOffRequestSpecifications.withToDate(toDate));
 
         return timeOffRequestRepository.findAll(specification, pageable)
-                .map(leaderApprovalMapper::toApprovalResponse);
+                .map(leaderApprovalMapper::toApprovalResponse)
+                .map(this::enrichWithUser);
     }
 
     /**
@@ -94,7 +96,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         timeOffRequest.setRejectionReason(null);
 
         TimeOffRequest updated = timeOffRequestRepository.save(timeOffRequest);
-        return leaderApprovalMapper.toApprovalResponse(updated);
+        return enrichWithUser(leaderApprovalMapper.toApprovalResponse(updated));
     }
 
     /**
@@ -117,7 +119,17 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
         timeOffRequest.setApprovedByLeaderId(leader.getId());
 
         TimeOffRequest updated = timeOffRequestRepository.save(timeOffRequest);
-        return leaderApprovalMapper.toApprovalResponse(updated);
+        return enrichWithUser(leaderApprovalMapper.toApprovalResponse(updated));
+    }
+
+    private ApprovalResponse enrichWithUser(ApprovalResponse response) {
+        if (response.getUserId() != null) {
+            userRepository.findById(response.getUserId()).ifPresent(u -> {
+                response.setUserName(u.getFullName());
+                response.setUserEmail(u.getEmail());
+            });
+        }
+        return response;
     }
 
     private User getCurrentUser() {

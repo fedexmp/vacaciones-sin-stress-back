@@ -53,6 +53,13 @@ public interface VacationBalanceService {
     List<VacationBalanceAdminResponse> getBalancesByUser(Long userId);
 
     /**
+     * Deletes one balance by id.
+     *
+     * @param id balance id
+     */
+    void deleteBalance(Long id);
+
+    /**
      * Returns current user's balances.
      *
      * @return current user's balances

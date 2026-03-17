@@ -13,6 +13,7 @@ import com.vacaciones_sin_stress.common.exception.ConflictException;
 import com.vacaciones_sin_stress.common.exception.ForbiddenOperationException;
 import com.vacaciones_sin_stress.common.exception.ResourceNotFoundException;
 import com.vacaciones_sin_stress.user.entity.User;
+import com.vacaciones_sin_stress.user.repository.UserRepository;
 import com.vacaciones_sin_stress.vacation.dto.request.HrApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.request.RejectApprovalRequest;
 import com.vacaciones_sin_stress.vacation.dto.response.ApprovalResponse;
@@ -45,6 +46,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
     private final CalendarEventRepository calendarEventRepository;
     private final CurrentUserService currentUserService;
     private final LeaderApprovalMapper approvalMapper;
+    private final UserRepository userRepository;
 
     /**
      * Returns requests waiting for final HR decision.
@@ -56,6 +58,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         return timeOffRequestRepository.findByStatusOrderByRequestedAtAsc(TimeOffRequestStatus.PENDING_HR)
                 .stream()
                 .map(approvalMapper::toApprovalResponse)
+                .map(this::enrichWithUser)
                 .toList();
     }
 
@@ -81,7 +84,8 @@ public class HrApprovalServiceImpl implements HrApprovalService {
                 .and(TimeOffRequestSpecifications.withToDate(toDate));
 
         return timeOffRequestRepository.findAll(specification, pageable)
-                .map(approvalMapper::toApprovalResponse);
+                .map(approvalMapper::toApprovalResponse)
+                .map(this::enrichWithUser);
     }
 
     /**
@@ -105,7 +109,7 @@ public class HrApprovalServiceImpl implements HrApprovalService {
 
         TimeOffRequest updatedRequest = timeOffRequestRepository.save(timeOffRequest);
         createCalendarEventIfNeeded(updatedRequest);
-        return approvalMapper.toApprovalResponse(updatedRequest);
+        return enrichWithUser(approvalMapper.toApprovalResponse(updatedRequest));
     }
 
     /**
@@ -128,7 +132,17 @@ public class HrApprovalServiceImpl implements HrApprovalService {
         timeOffRequest.setRejectionReason(rejectionReason.trim());
 
         TimeOffRequest updated = timeOffRequestRepository.save(timeOffRequest);
-        return approvalMapper.toApprovalResponse(updated);
+        return enrichWithUser(approvalMapper.toApprovalResponse(updated));
+    }
+
+    private ApprovalResponse enrichWithUser(ApprovalResponse response) {
+        if (response.getUserId() != null) {
+            userRepository.findById(response.getUserId()).ifPresent(u -> {
+                response.setUserName(u.getFullName());
+                response.setUserEmail(u.getEmail());
+            });
+        }
+        return response;
     }
 
     private User requireHrUser() {

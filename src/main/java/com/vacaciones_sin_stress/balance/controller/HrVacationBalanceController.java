@@ -6,6 +6,7 @@ import com.vacaciones_sin_stress.balance.service.VacationBalanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,6 +45,15 @@ public class HrVacationBalanceController {
             @PathVariable("id") Long id,
             @RequestBody CreateOrUpdateVacationBalanceRequest request) {
         return ResponseEntity.ok(vacationBalanceService.updateBalance(id, request));
+    }
+
+    /**
+     * Deletes one balance by id.
+     */
+    @DeleteMapping("/balances/{id}")
+    public ResponseEntity<Void> deleteBalance(@PathVariable("id") Long id) {
+        vacationBalanceService.deleteBalance(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

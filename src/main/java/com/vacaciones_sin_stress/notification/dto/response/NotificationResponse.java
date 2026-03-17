@@ -22,6 +22,8 @@ public class NotificationResponse {
     private boolean actionRequired;
     private boolean viewed;
     private Long userId;
+    private String userName;
+    private String userEmail;
     private TimeOffRequestStatus status;
     private EventType eventType;
     private LocalDate startDate;

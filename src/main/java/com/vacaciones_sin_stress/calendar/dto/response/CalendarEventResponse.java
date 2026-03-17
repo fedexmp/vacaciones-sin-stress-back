@@ -22,5 +22,6 @@ public class CalendarEventResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private EventType eventType;
+    private Integer businessDays;
     private LocalDateTime createdAt;
 }

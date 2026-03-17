@@ -11,6 +11,7 @@ import com.vacaciones_sin_stress.common.enums.Role;
 import com.vacaciones_sin_stress.common.exception.ApiValidationException;
 import com.vacaciones_sin_stress.user.entity.User;
 import com.vacaciones_sin_stress.user.repository.UserRepository;
+import com.vacaciones_sin_stress.vacation.repository.TimeOffRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class TeamCalendarServiceImpl implements TeamCalendarService {
     private final CalendarEventMapper calendarEventMapper;
     private final CurrentUserService currentUserService;
     private final UserRepository userRepository;
+    private final TimeOffRequestRepository timeOffRequestRepository;
 
     /**
      * Builds the full team-calendar response for current user.
@@ -91,9 +93,21 @@ public class TeamCalendarServiceImpl implements TeamCalendarService {
                 .stream()
                 .collect(Collectors.toMap(User::getId, User::getFullName, (left, right) -> left));
 
+        Set<Long> requestIds = events.stream()
+                .map(CalendarEvent::getTimeOffRequestId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        Map<Long, Integer> businessDaysByRequestId = timeOffRequestRepository.findAllById(requestIds)
+                .stream()
+                .collect(Collectors.toMap(r -> r.getId(), r -> r.getBusinessDays(), (left, right) -> left));
+
         return events.stream()
                 .map(calendarEventMapper::toResponse)
-                .peek(response -> response.setUserFullName(userNamesById.get(response.getUserId())))
+                .peek(response -> {
+                    response.setUserFullName(userNamesById.get(response.getUserId()));
+                    response.setBusinessDays(businessDaysByRequestId.get(response.getTimeOffRequestId()));
+                })
                 .toList();
     }
 

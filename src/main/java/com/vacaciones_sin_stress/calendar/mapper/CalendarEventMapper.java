@@ -9,5 +9,6 @@ import org.mapstruct.Mapping;
 public interface CalendarEventMapper {
 
     @Mapping(target = "userFullName", ignore = true)
+    @Mapping(target = "businessDays", ignore = true)
     CalendarEventResponse toResponse(CalendarEvent calendarEvent);
 }
