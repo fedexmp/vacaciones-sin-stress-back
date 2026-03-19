@@ -57,6 +57,22 @@ public interface TimeOffRequestRepository extends JpaRepository<TimeOffRequest, 
     @Query("""
             select vr
             from TimeOffRequest vr
+            where vr.userId = :userId
+              and vr.status in (
+                  com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.APPROVED,
+                  com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.PENDING_LEADER,
+                  com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.PENDING_HR
+              )
+              and vr.startDate <= :endDate
+              and vr.endDate >= :startDate
+            """)
+    List<TimeOffRequest> findActiveOverlappingRequests(@Param("userId") Long userId,
+                                                       @Param("startDate") LocalDate startDate,
+                                                       @Param("endDate") LocalDate endDate);
+
+    @Query("""
+            select vr
+            from TimeOffRequest vr
             where vr.status = com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus.APPROVED
               and vr.startDate <= :toDate
               and vr.endDate >= :fromDate

@@ -137,7 +137,7 @@ public class LeaderApprovalServiceImpl implements LeaderApprovalService {
     }
 
     private TimeOffRequest findAndValidatePendingRequest(Long requestId, User leader) {
-        TimeOffRequest timeOffRequest = timeOffRequestRepository.findById(requestId)
+        TimeOffRequest timeOffRequest = timeOffRequestRepository.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Time-off request not found: " + requestId));
 
         if (timeOffRequest.getStatus() != TimeOffRequestStatus.PENDING_LEADER) {

@@ -1,6 +1,8 @@
 package com.vacaciones_sin_stress.vacation.service.impl;
 
 import com.vacaciones_sin_stress.auth.service.CurrentUserService;
+import com.vacaciones_sin_stress.balance.entity.VacationBalance;
+import com.vacaciones_sin_stress.balance.repository.VacationBalanceRepository;
 import com.vacaciones_sin_stress.common.enums.EventType;
 import com.vacaciones_sin_stress.common.enums.TimeOffRequestStatus;
 import com.vacaciones_sin_stress.common.exception.ApiValidationException;
@@ -36,6 +38,7 @@ import java.util.List;
 public class TimeOffRequestServiceImpl implements TimeOffRequestService {
 
     private final TimeOffRequestRepository timeOffRequestRepository;
+    private final VacationBalanceRepository vacationBalanceRepository;
     private final BusinessDayCalculatorService businessDayCalculatorService;
     private final CurrentUserService currentUserService;
     private final TimeOffRequestMapper timeOffRequestMapper;
@@ -60,10 +63,14 @@ public class TimeOffRequestServiceImpl implements TimeOffRequestService {
             throw new ApiValidationException("Request must include at least one business day");
         }
 
+        if (request.getEventType() == EventType.VACATION) {
+            validateSufficientBalance(currentUser.getId(), requestYear, businessDays);
+        }
+
         if (!timeOffRequestRepository
-                .findApprovedOverlappingRequests(currentUser.getId(), startDate, endDate)
+                .findActiveOverlappingRequests(currentUser.getId(), startDate, endDate)
                 .isEmpty()) {
-            throw new ConflictException("Request overlaps with an approved request");
+            throw new ConflictException("Request overlaps with an existing active request (approved or pending)");
         }
 
         TimeOffRequest timeOffRequest = TimeOffRequest.builder()
@@ -167,6 +174,18 @@ public class TimeOffRequestServiceImpl implements TimeOffRequestService {
     private void validatePeriod(LocalDate fromDate, LocalDate toDate) {
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
             throw new ApiValidationException("fromDate must be before or equal to toDate");
+        }
+    }
+
+    private void validateSufficientBalance(Long userId, int requestYear, int businessDays) {
+        VacationBalance balance = vacationBalanceRepository.findByUserIdAndYear(userId, requestYear)
+                .orElseThrow(() -> new ApiValidationException(
+                        "No vacation balance found for year " + requestYear));
+
+        if (balance.getAvailableDays() < businessDays) {
+            throw new ApiValidationException(
+                    "Insufficient vacation balance: " + balance.getAvailableDays()
+                            + " available, " + businessDays + " requested");
         }
     }
 
